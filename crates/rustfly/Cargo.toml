@@ -6,4 +6,8 @@ edition = "2024"
 [dependencies]
 async-trait = "0.1.89"
 bytes = "1.11.1"
-tokio = { version = "1.52.3", features = ["fs"] }
+tokio = { version = "1", features = ["fs", "rt", "macros"] }
+tempfile = "3.27.0"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }
