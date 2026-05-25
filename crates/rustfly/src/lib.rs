@@ -1,5 +1,6 @@
 pub mod utility;
 pub mod definition;
+pub mod adapter;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
