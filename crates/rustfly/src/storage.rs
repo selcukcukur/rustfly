@@ -334,12 +334,28 @@ impl Storage {
         Self::default_driver()?.read_sync(path)
     }
 
+    pub async fn read_string(path: &str) -> Result<String> {
+        Self::default_driver()?.read_string(path).await
+    }
+
+    pub fn read_string_sync(path: &str) -> Result<String> {
+        Self::default_driver()?.read_string_sync(path)
+    }
+
     pub async fn get(path: &str) -> Result<Bytes> {
         Self::read(path).await
     }
 
     pub fn get_sync(path: &str) -> Result<Bytes> {
         Self::read_sync(path)
+    }
+
+    pub async fn get_string(path: &str) -> Result<String> {
+        Self::read_string(path).await
+    }
+
+    pub fn get_string_sync(path: &str) -> Result<String> {
+        Self::read_string_sync(path)
     }
 
     pub async fn write(path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
@@ -722,6 +738,27 @@ mod tests {
                 .unwrap()
                 .is_some()
         );
+    }
+
+    #[tokio::test]
+    async fn driver_shortcuts_read_utf8_strings() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = format!("strings-{}", std::process::id());
+        Storage::extend_or_replace_with_config(
+            &name,
+            StorageConfig::new().with_path("root", dir.path()),
+            |config| {
+                let root = config.path("root").unwrap();
+                Ok(Arc::new(NativeAdapter::new(root)))
+            },
+        )
+        .unwrap();
+
+        let storage = Storage::disk(&name).unwrap();
+        storage.put("text/file.txt", "hello").await.unwrap();
+
+        assert_eq!(storage.get_string("text/file.txt").await.unwrap(), "hello");
+        assert_eq!(storage.get_string_sync("text/file.txt").unwrap(), "hello");
     }
 
     #[cfg(feature = "inmemory")]

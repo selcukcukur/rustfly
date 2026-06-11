@@ -1,5 +1,6 @@
 use std::fmt;
 use std::io;
+use std::string::FromUtf8Error;
 use std::time::SystemTime;
 
 pub type Result<T> = std::result::Result<T, RustflyError>;
@@ -7,6 +8,7 @@ pub type Result<T> = std::result::Result<T, RustflyError>;
 #[derive(Debug)]
 pub enum RustflyError {
     Io(io::Error),
+    InvalidUtf8(FromUtf8Error),
     InvalidPath(String),
     InvalidDriverName,
     DriverNotFound(String),
@@ -21,6 +23,7 @@ impl fmt::Display for RustflyError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Io(error) => write!(formatter, "io error: {error}"),
+            Self::InvalidUtf8(error) => write!(formatter, "invalid utf-8 contents: {error}"),
             Self::InvalidPath(path) => write!(formatter, "invalid storage path: {path}"),
             Self::InvalidDriverName => write!(formatter, "driver name cannot be empty"),
             Self::DriverNotFound(name) => write!(formatter, "storage driver not found: {name}"),
@@ -43,6 +46,7 @@ impl std::error::Error for RustflyError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Io(error) => Some(error),
+            Self::InvalidUtf8(error) => Some(error),
             _ => None,
         }
     }
@@ -51,6 +55,12 @@ impl std::error::Error for RustflyError {
 impl From<io::Error> for RustflyError {
     fn from(value: io::Error) -> Self {
         Self::Io(value)
+    }
+}
+
+impl From<FromUtf8Error> for RustflyError {
+    fn from(value: FromUtf8Error) -> Self {
+        Self::InvalidUtf8(value)
     }
 }
 

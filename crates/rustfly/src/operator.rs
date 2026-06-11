@@ -33,12 +33,28 @@ impl Filesystem {
         self.adapter.read_sync(path)
     }
 
+    pub async fn read_string(&self, path: &str) -> Result<String> {
+        Ok(String::from_utf8(self.read(path).await?.to_vec())?)
+    }
+
+    pub fn read_string_sync(&self, path: &str) -> Result<String> {
+        Ok(String::from_utf8(self.read_sync(path)?.to_vec())?)
+    }
+
     pub async fn get(&self, path: &str) -> Result<Bytes> {
         self.read(path).await
     }
 
     pub fn get_sync(&self, path: &str) -> Result<Bytes> {
         self.read_sync(path)
+    }
+
+    pub async fn get_string(&self, path: &str) -> Result<String> {
+        self.read_string(path).await
+    }
+
+    pub fn get_string_sync(&self, path: &str) -> Result<String> {
+        self.read_string_sync(path)
     }
 
     pub async fn write(&self, path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
