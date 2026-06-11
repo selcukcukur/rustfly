@@ -7,6 +7,8 @@ use crate::adapter::contract::RustflyAdapter;
 use crate::adapter::native::NativeAdapter;
 use crate::definition::{Result, RustflyError};
 use crate::operator::Filesystem;
+#[cfg(feature = "inmemory")]
+use rustfly_inmemory::InMemoryAdapter;
 
 pub type DriverFactory = dyn Fn(&StorageConfig) -> Result<Arc<dyn RustflyAdapter>> + Send + Sync;
 
@@ -59,22 +61,51 @@ fn init_builtin_drivers(lock: &'static RwLock<Registry>) {
     {
         let mut registry = lock.write().expect("rustfly registry poisoned");
 
-        if registry.drivers.contains_key("local") {
-            return;
+        if !registry.drivers.contains_key("local") {
+            let config = StorageConfig::new().with("root", ".");
+            registry.drivers.insert(
+                "local".to_string(),
+                DriverDefinition {
+                    factory: Arc::new(|config| {
+                        let root = config.path("root").unwrap_or_else(|| PathBuf::from("."));
+                        Ok(Arc::new(NativeAdapter::new(root)))
+                    }),
+                    config,
+                },
+            );
         }
 
-        let config = StorageConfig::new().with("root", ".");
-        registry.drivers.insert(
-            "local".to_string(),
-            DriverDefinition {
-                factory: Arc::new(|config| {
-                    let root = config.path("root").unwrap_or_else(|| PathBuf::from("."));
-                    Ok(Arc::new(NativeAdapter::new(root)))
-                }),
-                config,
-            },
-        );
-        registry.default_driver = Some("local".to_string());
+        if registry.default_driver.is_none() {
+            registry.default_driver = Some("local".to_string());
+        }
+    }
+
+    #[cfg(feature = "inmemory")]
+    {
+        let mut registry = lock.write().expect("rustfly registry poisoned");
+
+        if !registry.drivers.contains_key("memory") {
+            registry.drivers.insert(
+                "memory".to_string(),
+                DriverDefinition {
+                    factory: Arc::new(|_| Ok(Arc::new(InMemoryAdapter::new()))),
+                    config: StorageConfig::new(),
+                },
+            );
+        }
+
+        if !registry.drivers.contains_key("inmemory") {
+            let memory = registry
+                .drivers
+                .get("memory")
+                .expect("memory driver must exist")
+                .clone();
+            registry.drivers.insert("inmemory".to_string(), memory);
+        }
+
+        if registry.default_driver.is_none() {
+            registry.default_driver = Some("memory".to_string());
+        }
     }
 }
 
@@ -263,5 +294,15 @@ mod tests {
             storage.read_sync("anything").unwrap(),
             Bytes::from_static(b"memory-sync")
         );
+    }
+
+    #[cfg(feature = "inmemory")]
+    #[tokio::test]
+    async fn enabled_inmemory_feature_registers_memory_driver() {
+        let storage = Storage::driver("memory").unwrap();
+
+        storage.write("feature.txt", "enabled").await.unwrap();
+
+        assert_eq!(storage.read("feature.txt").await.unwrap(), "enabled");
     }
 }
