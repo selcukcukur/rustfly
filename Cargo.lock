@@ -201,7 +201,7 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "rustfly"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 dependencies = [
  "async-trait",
  "bytes",
@@ -213,7 +213,7 @@ dependencies = [
 
 [[package]]
 name = "rustfly-core"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 dependencies = [
  "async-trait",
  "bytes",
@@ -221,7 +221,7 @@ dependencies = [
 
 [[package]]
 name = "rustfly-inmemory"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 dependencies = [
  "async-trait",
  "bytes",

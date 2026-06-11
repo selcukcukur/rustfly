@@ -1,6 +1,6 @@
 [package]
 name = "rustfly"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2024"
 
 [features]
@@ -20,8 +20,8 @@ cloudflare = []
 [dependencies]
 async-trait = "0.1.89"
 bytes = "1.11.1"
-rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.2" }
-rustfly-inmemory = { path = "../rustfly-inmemory", version = "0.1.0-alpha.2", optional = true }
+rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.3" }
+rustfly-inmemory = { path = "../rustfly-inmemory", version = "0.1.0-alpha.3", optional = true }
 tokio = { version = "1", features = ["fs", "rt", "macros"] }
 tempfile = "3.27.0"
 
