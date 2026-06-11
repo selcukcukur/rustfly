@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock, RwLock};
+use std::time::SystemTime;
 
 use bytes::Bytes;
 
@@ -437,6 +438,22 @@ impl Storage {
         Self::default_driver()?.metadata_sync(path)
     }
 
+    pub async fn size(path: &str) -> Result<u64> {
+        Self::default_driver()?.size(path).await
+    }
+
+    pub fn size_sync(path: &str) -> Result<u64> {
+        Self::default_driver()?.size_sync(path)
+    }
+
+    pub async fn last_modified(path: &str) -> Result<Option<SystemTime>> {
+        Self::default_driver()?.last_modified(path).await
+    }
+
+    pub fn last_modified_sync(path: &str) -> Result<Option<SystemTime>> {
+        Self::default_driver()?.last_modified_sync(path)
+    }
+
     pub async fn copy(from: &str, to: &str) -> Result<()> {
         Self::default_driver()?.copy(from, to).await
     }
@@ -671,6 +688,40 @@ mod tests {
                 .any(|entry| entry.path() == "tree/nested")
         );
         assert!(directories.iter().any(|entry| entry.path() == "tree/empty"));
+    }
+
+    #[tokio::test]
+    async fn driver_shortcuts_read_size_and_last_modified() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = format!("metadata-{}", std::process::id());
+        Storage::extend_or_replace_with_config(
+            &name,
+            StorageConfig::new().with_path("root", dir.path()),
+            |config| {
+                let root = config.path("root").unwrap();
+                Ok(Arc::new(NativeAdapter::new(root)))
+            },
+        )
+        .unwrap();
+
+        let storage = Storage::disk(&name).unwrap();
+        storage.put("meta/file.txt", "hello").await.unwrap();
+
+        assert_eq!(storage.size("meta/file.txt").await.unwrap(), 5);
+        assert_eq!(storage.size_sync("meta/file.txt").unwrap(), 5);
+        assert!(
+            storage
+                .last_modified("meta/file.txt")
+                .await
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            storage
+                .last_modified_sync("meta/file.txt")
+                .unwrap()
+                .is_some()
+        );
     }
 
     #[cfg(feature = "inmemory")]

@@ -1,5 +1,6 @@
 use bytes::Bytes;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use crate::adapter::contract::RustflyAdapter;
 use crate::definition::{EntryKind, Metadata, Result};
@@ -134,6 +135,22 @@ impl Filesystem {
 
     pub fn metadata_sync(&self, path: &str) -> Result<Metadata> {
         self.adapter.metadata_sync(path)
+    }
+
+    pub async fn size(&self, path: &str) -> Result<u64> {
+        Ok(self.metadata(path).await?.len())
+    }
+
+    pub fn size_sync(&self, path: &str) -> Result<u64> {
+        Ok(self.metadata_sync(path)?.len())
+    }
+
+    pub async fn last_modified(&self, path: &str) -> Result<Option<SystemTime>> {
+        Ok(self.metadata(path).await?.modified())
+    }
+
+    pub fn last_modified_sync(&self, path: &str) -> Result<Option<SystemTime>> {
+        Ok(self.metadata_sync(path)?.modified())
     }
 
     pub async fn copy(&self, from: &str, to: &str) -> Result<()> {
