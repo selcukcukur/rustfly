@@ -2,10 +2,12 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock, RwLock};
 
+use bytes::Bytes;
+
 use crate::adapter::contract::RustflyAdapter;
 #[cfg(feature = "native")]
 use crate::adapter::native::NativeAdapter;
-use crate::definition::{Result, RustflyError};
+use crate::definition::{Metadata, Result, RustflyError};
 use crate::operator::Filesystem;
 #[cfg(feature = "inmemory")]
 use rustfly_inmemory::InMemoryAdapter;
@@ -176,6 +178,10 @@ impl Storage {
         Ok(())
     }
 
+    pub fn set_default_disk(name: impl Into<String>) -> Result<()> {
+        Self::set_default_driver(name)
+    }
+
     pub fn default_driver() -> Result<Filesystem> {
         let name = {
             let registry = registry()
@@ -188,6 +194,10 @@ impl Storage {
         };
 
         Self::driver(name)
+    }
+
+    pub fn default_disk() -> Result<Filesystem> {
+        Self::default_driver()
     }
 
     pub fn driver(name: impl AsRef<str>) -> Result<Filesystem> {
@@ -210,6 +220,98 @@ impl Storage {
 
         let adapter = (definition.factory)(&definition.config)?;
         Ok(Filesystem::new(requested.to_string(), adapter))
+    }
+
+    pub fn disk(name: impl AsRef<str>) -> Result<Filesystem> {
+        Self::driver(name)
+    }
+
+    pub async fn read(path: &str) -> Result<Bytes> {
+        Self::default_driver()?.read(path).await
+    }
+
+    pub fn read_sync(path: &str) -> Result<Bytes> {
+        Self::default_driver()?.read_sync(path)
+    }
+
+    pub async fn get(path: &str) -> Result<Bytes> {
+        Self::read(path).await
+    }
+
+    pub fn get_sync(path: &str) -> Result<Bytes> {
+        Self::read_sync(path)
+    }
+
+    pub async fn write(path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
+        Self::default_driver()?.write(path, contents).await
+    }
+
+    pub fn write_sync(path: &str, contents: impl Into<Bytes>) -> Result<()> {
+        Self::default_driver()?.write_sync(path, contents)
+    }
+
+    pub async fn put(path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
+        Self::write(path, contents).await
+    }
+
+    pub fn put_sync(path: &str, contents: impl Into<Bytes>) -> Result<()> {
+        Self::write_sync(path, contents)
+    }
+
+    pub async fn delete(path: &str) -> Result<()> {
+        Self::default_driver()?.delete(path).await
+    }
+
+    pub fn delete_sync(path: &str) -> Result<()> {
+        Self::default_driver()?.delete_sync(path)
+    }
+
+    pub async fn exists(path: &str) -> Result<bool> {
+        Self::default_driver()?.exists(path).await
+    }
+
+    pub fn exists_sync(path: &str) -> Result<bool> {
+        Self::default_driver()?.exists_sync(path)
+    }
+
+    pub async fn create_dir(path: &str) -> Result<()> {
+        Self::default_driver()?.create_dir(path).await
+    }
+
+    pub fn create_dir_sync(path: &str) -> Result<()> {
+        Self::default_driver()?.create_dir_sync(path)
+    }
+
+    pub async fn list(path: &str) -> Result<Vec<Metadata>> {
+        Self::default_driver()?.list(path).await
+    }
+
+    pub fn list_sync(path: &str) -> Result<Vec<Metadata>> {
+        Self::default_driver()?.list_sync(path)
+    }
+
+    pub async fn metadata(path: &str) -> Result<Metadata> {
+        Self::default_driver()?.metadata(path).await
+    }
+
+    pub fn metadata_sync(path: &str) -> Result<Metadata> {
+        Self::default_driver()?.metadata_sync(path)
+    }
+
+    pub async fn copy(from: &str, to: &str) -> Result<()> {
+        Self::default_driver()?.copy(from, to).await
+    }
+
+    pub fn copy_sync(from: &str, to: &str) -> Result<()> {
+        Self::default_driver()?.copy_sync(from, to)
+    }
+
+    pub async fn move_file(from: &str, to: &str) -> Result<()> {
+        Self::default_driver()?.move_file(from, to).await
+    }
+
+    pub fn move_file_sync(from: &str, to: &str) -> Result<()> {
+        Self::default_driver()?.move_file_sync(from, to)
     }
 }
 
@@ -280,6 +382,12 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn disk_alias_resolves_named_driver() {
+        let storage = Storage::disk("local").unwrap();
+        assert_eq!(storage.driver_name(), "local");
+    }
+
+    #[tokio::test]
     async fn custom_drivers_can_be_registered_and_resolved() {
         let name = format!("memory-{}", std::process::id());
 
@@ -294,6 +402,28 @@ mod tests {
             storage.read_sync("anything").unwrap(),
             Bytes::from_static(b"memory-sync")
         );
+    }
+
+    #[tokio::test]
+    async fn default_driver_shortcuts_support_async_and_sync_operations() {
+        let dir = tempfile::tempdir().unwrap();
+        Storage::configure(
+            "local",
+            StorageConfig::new().with("root", dir.path().to_string_lossy()),
+        )
+        .unwrap();
+
+        Storage::put("facade/async.txt", "async").await.unwrap();
+        Storage::put_sync("facade/sync.txt", Bytes::from_static(b"sync")).unwrap();
+        Storage::copy("facade/async.txt", "facade/copy.txt")
+            .await
+            .unwrap();
+        Storage::move_file_sync("facade/sync.txt", "facade/moved.txt").unwrap();
+
+        assert_eq!(Storage::get("facade/async.txt").await.unwrap(), "async");
+        assert_eq!(Storage::get_sync("facade/moved.txt").unwrap(), "sync");
+        assert!(Storage::exists("facade/copy.txt").await.unwrap());
+        assert_eq!(Storage::metadata_sync("facade/moved.txt").unwrap().len(), 4);
     }
 
     #[cfg(feature = "inmemory")]
