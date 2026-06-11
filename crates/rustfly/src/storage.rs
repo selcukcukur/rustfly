@@ -16,15 +16,22 @@ use rustfly_inmemory::InMemoryAdapter;
 pub type DriverFactory = dyn Fn(&StorageConfig) -> Result<Arc<dyn RustflyAdapter>> + Send + Sync;
 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
+/// Driver-specific configuration passed to adapter factories.
+///
+/// `StorageConfig` keeps values as strings so configuration can be built from
+/// environment variables, config files, or fluent builders without coupling the
+/// core facade to any specific remote provider.
 pub struct StorageConfig {
     values: HashMap<String, String>,
 }
 
 impl StorageConfig {
+    /// Create an empty storage configuration.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Build a configuration from key/value pairs.
     pub fn from_pairs(
         pairs: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
     ) -> Self {
@@ -41,48 +48,59 @@ impl StorageConfig {
         self.values.insert(key.into(), value.into())
     }
 
+    /// Return a new configuration with the provided string value.
     pub fn with(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.insert(key, value);
         self
     }
 
+    /// Return a new configuration with a path value stored lossily as UTF-8.
     pub fn with_path(self, key: impl Into<String>, value: impl Into<PathBuf>) -> Self {
         self.with(key, value.into().to_string_lossy())
     }
 
+    /// Return a new configuration with a boolean value.
     pub fn with_bool(self, key: impl Into<String>, value: bool) -> Self {
         self.with(key, value.to_string())
     }
 
+    /// Return a new configuration with an unsigned integer value.
     pub fn with_u64(self, key: impl Into<String>, value: u64) -> Self {
         self.with(key, value.to_string())
     }
 
+    /// Merge another configuration into this one, replacing duplicate keys.
     pub fn merge(mut self, other: Self) -> Self {
         self.values.extend(other.values);
         self
     }
 
+    /// Read a raw string configuration value.
     pub fn get(&self, key: &str) -> Option<&str> {
         self.values.get(key).map(String::as_str)
     }
 
+    /// Check whether a key exists.
     pub fn contains(&self, key: &str) -> bool {
         self.values.contains_key(key)
     }
 
+    /// Read a configuration value as a path.
     pub fn path(&self, key: &str) -> Option<PathBuf> {
         self.get(key).map(PathBuf::from)
     }
 
+    /// Read a configuration value as a boolean.
     pub fn bool(&self, key: &str) -> Option<bool> {
         self.get(key).and_then(|value| value.parse().ok())
     }
 
+    /// Read a configuration value as an unsigned integer.
     pub fn u64(&self, key: &str) -> Option<u64> {
         self.get(key).and_then(|value| value.parse().ok())
     }
 
+    /// Iterate over configuration keys.
     pub fn keys(&self) -> impl Iterator<Item = &str> {
         self.values.keys().map(String::as_str)
     }
@@ -235,9 +253,14 @@ where
     );
 }
 
+/// Thread-safe storage facade and driver registry.
+///
+/// `Storage` resolves configured drivers into `Filesystem` operators and also
+/// exposes default-driver shortcuts such as `Storage::get` and `Storage::put`.
 pub struct Storage;
 
 impl Storage {
+    /// Register a new driver with an empty default configuration.
     pub fn extend(
         name: impl Into<String>,
         factory: impl Fn(&StorageConfig) -> Result<Arc<dyn RustflyAdapter>> + Send + Sync + 'static,
@@ -245,6 +268,7 @@ impl Storage {
         Self::extend_with_config(name, StorageConfig::new(), factory)
     }
 
+    /// Register a new driver with an initial configuration.
     pub fn extend_with_config(
         name: impl Into<String>,
         config: StorageConfig,
@@ -274,6 +298,7 @@ impl Storage {
         Ok(())
     }
 
+    /// Register or replace a driver with an empty default configuration.
     pub fn extend_or_replace(
         name: impl Into<String>,
         factory: impl Fn(&StorageConfig) -> Result<Arc<dyn RustflyAdapter>> + Send + Sync + 'static,
@@ -281,6 +306,7 @@ impl Storage {
         Self::extend_or_replace_with_config(name, StorageConfig::new(), factory)
     }
 
+    /// Register or replace a driver with an initial configuration.
     pub fn extend_or_replace_with_config(
         name: impl Into<String>,
         config: StorageConfig,
@@ -306,6 +332,7 @@ impl Storage {
         Ok(())
     }
 
+    /// Check whether a driver is currently registered.
     pub fn has_driver(name: impl AsRef<str>) -> Result<bool> {
         let name = normalize_driver_name(name.as_ref().to_string())?;
         let registry = registry()
@@ -315,6 +342,7 @@ impl Storage {
         Ok(registry.drivers.contains_key(&name))
     }
 
+    /// Return all registered driver names in stable sorted order.
     pub fn driver_names() -> Result<Vec<String>> {
         let registry = registry()
             .read()
@@ -324,6 +352,7 @@ impl Storage {
         Ok(names)
     }
 
+    /// Replace the configuration for a registered driver.
     pub fn configure(name: impl Into<String>, config: StorageConfig) -> Result<()> {
         let name = normalize_driver_name(name.into())?;
         let mut registry = registry()
@@ -338,6 +367,7 @@ impl Storage {
         Ok(())
     }
 
+    /// Set the default driver used by facade shortcuts.
     pub fn set_default_driver(name: impl Into<String>) -> Result<()> {
         let name = normalize_driver_name(name.into())?;
         let mut registry = registry()
@@ -352,10 +382,12 @@ impl Storage {
         Ok(())
     }
 
+    /// Alias for `set_default_driver`.
     pub fn set_default_disk(name: impl Into<String>) -> Result<()> {
         Self::set_default_driver(name)
     }
 
+    /// Resolve the current default driver.
     pub fn default_driver() -> Result<Filesystem> {
         let name = {
             let registry = registry()
@@ -370,10 +402,12 @@ impl Storage {
         Self::driver(name)
     }
 
+    /// Alias for `default_driver`.
     pub fn default_disk() -> Result<Filesystem> {
         Self::default_driver()
     }
 
+    /// Resolve a named driver, or the default driver when `name` is empty.
     pub fn driver(name: impl AsRef<str>) -> Result<Filesystem> {
         let requested = name.as_ref().trim();
 
@@ -396,6 +430,7 @@ impl Storage {
         Ok(Filesystem::new(requested.to_string(), adapter))
     }
 
+    /// Alias for `driver`.
     pub fn disk(name: impl AsRef<str>) -> Result<Filesystem> {
         Self::driver(name)
     }

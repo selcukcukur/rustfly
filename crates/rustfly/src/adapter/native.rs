@@ -10,11 +10,16 @@ use crate::definition::{EntryKind, Metadata, Result, RustflyError};
 use crate::path::RustflyPath;
 
 #[derive(Debug, Clone)]
+/// Native filesystem adapter backed by `std::fs` and `tokio::fs`.
+///
+/// Paths are normalized as portable storage keys and resolved under the
+/// configured root, preventing traversal outside the adapter boundary.
 pub struct NativeAdapter {
     root: PathBuf,
 }
 
 impl NativeAdapter {
+    /// Create a native adapter rooted at the provided local filesystem path.
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }

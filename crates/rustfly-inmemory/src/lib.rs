@@ -6,12 +6,18 @@ use bytes::Bytes;
 use rustfly_core::{EntryKind, Metadata, Result, RustflyAdapter, RustflyError, RustflyPath};
 
 #[derive(Debug, Default)]
+/// In-memory adapter for tests, ephemeral storage, and local development.
+///
+/// Files and directory markers are kept behind `RwLock`s so the adapter can be
+/// shared safely across threads while preserving the same sync and async
+/// contract as remote adapters.
 pub struct InMemoryAdapter {
     files: RwLock<HashMap<String, Bytes>>,
     directories: RwLock<HashSet<String>>,
 }
 
 impl InMemoryAdapter {
+    /// Create an empty in-memory adapter.
     pub fn new() -> Self {
         Self::default()
     }

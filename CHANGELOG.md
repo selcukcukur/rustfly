@@ -21,6 +21,11 @@
 - Reduce in-memory listing and deletion path matching allocations.
 - Avoid repeated native storage parent key normalization while listing directory entries.
 
+### Documentation
+
+- Add rustdoc coverage for the facade crate, core crate, storage registry, and native/in-memory adapters.
+- Add crate-level rustdoc for first-party adapter placeholder crates.
+
 ### Testing
 
 - Cover file size and last-modified shortcuts against an isolated native driver.

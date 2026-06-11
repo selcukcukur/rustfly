@@ -1,3 +1,9 @@
+//! Fluent, thread-safe storage facade for Rustfly.
+//!
+//! `rustfly` exposes a Laravel-inspired `Storage` API over native filesystems
+//! and feature-enabled adapter crates. The default build stays local-first with
+//! the native adapter, while optional features register additional drivers.
+
 pub mod adapter;
 pub mod definition;
 pub mod operator;
