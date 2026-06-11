@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.4 - 2026-06-12
+
+### Features
+
+- Add typed `StorageConfig` builders and getters for path, bool, and integer values.
+- Add storage driver registry inspection with `Storage::has_driver` and `Storage::driver_names`.
+- Add replaceable driver registration with `Storage::extend_or_replace`.
+
+### Testing
+
+- Cover typed config composition and driver registry replacement behavior.
+
 ## 0.1.0-alpha.3 - 2026-06-12
 
 ### Features
