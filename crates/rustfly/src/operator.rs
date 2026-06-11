@@ -88,6 +88,14 @@ impl Filesystem {
         self.adapter.list_sync(path)
     }
 
+    pub async fn list_recursive(&self, path: &str) -> Result<Vec<Metadata>> {
+        self.adapter.list_recursive(path).await
+    }
+
+    pub fn list_recursive_sync(&self, path: &str) -> Result<Vec<Metadata>> {
+        self.adapter.list_recursive_sync(path)
+    }
+
     pub async fn files(&self, path: &str) -> Result<Vec<Metadata>> {
         filter_by_kind(self.list(path).await?, EntryKind::File)
     }
@@ -102,6 +110,22 @@ impl Filesystem {
 
     pub fn directories_sync(&self, path: &str) -> Result<Vec<Metadata>> {
         filter_by_kind(self.list_sync(path)?, EntryKind::Directory)
+    }
+
+    pub async fn all_files(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list_recursive(path).await?, EntryKind::File)
+    }
+
+    pub fn all_files_sync(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list_recursive_sync(path)?, EntryKind::File)
+    }
+
+    pub async fn all_directories(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list_recursive(path).await?, EntryKind::Directory)
+    }
+
+    pub fn all_directories_sync(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list_recursive_sync(path)?, EntryKind::Directory)
     }
 
     pub async fn metadata(&self, path: &str) -> Result<Metadata> {

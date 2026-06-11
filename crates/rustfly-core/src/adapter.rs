@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use bytes::Bytes;
+use std::collections::VecDeque;
 
 use crate::definition::{Metadata, Result, RustflyError};
 
@@ -52,6 +53,40 @@ pub trait RustflyAdapter: Send + Sync {
     async fn list(&self, path: &str) -> Result<Vec<Metadata>> {
         let _ = path;
         Err(RustflyError::Unsupported("list"))
+    }
+
+    fn list_recursive_sync(&self, path: &str) -> Result<Vec<Metadata>> {
+        let mut entries = Vec::new();
+        let mut pending = VecDeque::from([path.to_string()]);
+
+        while let Some(current) = pending.pop_front() {
+            for entry in self.list_sync(&current)? {
+                if entry.is_directory() {
+                    pending.push_back(entry.path().to_string());
+                }
+
+                entries.push(entry);
+            }
+        }
+
+        Ok(entries)
+    }
+
+    async fn list_recursive(&self, path: &str) -> Result<Vec<Metadata>> {
+        let mut entries = Vec::new();
+        let mut pending = VecDeque::from([path.to_string()]);
+
+        while let Some(current) = pending.pop_front() {
+            for entry in self.list(&current).await? {
+                if entry.is_directory() {
+                    pending.push_back(entry.path().to_string());
+                }
+
+                entries.push(entry);
+            }
+        }
+
+        Ok(entries)
     }
 
     fn metadata_sync(&self, path: &str) -> Result<Metadata> {

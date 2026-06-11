@@ -389,6 +389,14 @@ impl Storage {
         Self::default_driver()?.list_sync(path)
     }
 
+    pub async fn list_recursive(path: &str) -> Result<Vec<Metadata>> {
+        Self::default_driver()?.list_recursive(path).await
+    }
+
+    pub fn list_recursive_sync(path: &str) -> Result<Vec<Metadata>> {
+        Self::default_driver()?.list_recursive_sync(path)
+    }
+
     pub async fn files(path: &str) -> Result<Vec<Metadata>> {
         filter_by_kind(Self::list(path).await?, EntryKind::File)
     }
@@ -403,6 +411,22 @@ impl Storage {
 
     pub fn directories_sync(path: &str) -> Result<Vec<Metadata>> {
         filter_by_kind(Self::list_sync(path)?, EntryKind::Directory)
+    }
+
+    pub async fn all_files(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list_recursive(path).await?, EntryKind::File)
+    }
+
+    pub fn all_files_sync(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list_recursive_sync(path)?, EntryKind::File)
+    }
+
+    pub async fn all_directories(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list_recursive(path).await?, EntryKind::Directory)
+    }
+
+    pub fn all_directories_sync(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list_recursive_sync(path)?, EntryKind::Directory)
     }
 
     pub async fn metadata(path: &str) -> Result<Metadata> {
@@ -611,6 +635,42 @@ mod tests {
         assert_eq!(directories.len(), 1);
         assert_eq!(directories[0].path(), "listing/empty");
         assert!(directories[0].is_directory());
+    }
+
+    #[tokio::test]
+    async fn driver_shortcuts_support_recursive_listing() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = format!("recursive-{}", std::process::id());
+        Storage::extend_or_replace_with_config(
+            &name,
+            StorageConfig::new().with_path("root", dir.path()),
+            |config| {
+                let root = config.path("root").unwrap();
+                Ok(Arc::new(NativeAdapter::new(root)))
+            },
+        )
+        .unwrap();
+
+        let storage = Storage::disk(&name).unwrap();
+        storage.put("tree/root.txt", "root").await.unwrap();
+        storage.put("tree/nested/file.txt", "nested").await.unwrap();
+        storage.create_dir("tree/empty").await.unwrap();
+
+        let files = storage.all_files("tree").await.unwrap();
+        let directories = storage.all_directories_sync("tree").unwrap();
+
+        assert!(files.iter().any(|entry| entry.path() == "tree/root.txt"));
+        assert!(
+            files
+                .iter()
+                .any(|entry| entry.path() == "tree/nested/file.txt")
+        );
+        assert!(
+            directories
+                .iter()
+                .any(|entry| entry.path() == "tree/nested")
+        );
+        assert!(directories.iter().any(|entry| entry.path() == "tree/empty"));
     }
 
     #[cfg(feature = "inmemory")]
