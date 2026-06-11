@@ -24,8 +24,41 @@ impl StorageConfig {
         Self::default()
     }
 
+    pub fn from_pairs(
+        pairs: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
+    ) -> Self {
+        let mut config = Self::new();
+
+        for (key, value) in pairs {
+            config.insert(key, value);
+        }
+
+        config
+    }
+
+    pub fn insert(&mut self, key: impl Into<String>, value: impl Into<String>) -> Option<String> {
+        self.values.insert(key.into(), value.into())
+    }
+
     pub fn with(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        self.values.insert(key.into(), value.into());
+        self.insert(key, value);
+        self
+    }
+
+    pub fn with_path(self, key: impl Into<String>, value: impl Into<PathBuf>) -> Self {
+        self.with(key, value.into().to_string_lossy())
+    }
+
+    pub fn with_bool(self, key: impl Into<String>, value: bool) -> Self {
+        self.with(key, value.to_string())
+    }
+
+    pub fn with_u64(self, key: impl Into<String>, value: u64) -> Self {
+        self.with(key, value.to_string())
+    }
+
+    pub fn merge(mut self, other: Self) -> Self {
+        self.values.extend(other.values);
         self
     }
 
@@ -33,8 +66,24 @@ impl StorageConfig {
         self.values.get(key).map(String::as_str)
     }
 
+    pub fn contains(&self, key: &str) -> bool {
+        self.values.contains_key(key)
+    }
+
     pub fn path(&self, key: &str) -> Option<PathBuf> {
         self.get(key).map(PathBuf::from)
+    }
+
+    pub fn bool(&self, key: &str) -> Option<bool> {
+        self.get(key).and_then(|value| value.parse().ok())
+    }
+
+    pub fn u64(&self, key: &str) -> Option<u64> {
+        self.get(key).and_then(|value| value.parse().ok())
+    }
+
+    pub fn keys(&self) -> impl Iterator<Item = &str> {
+        self.values.keys().map(String::as_str)
     }
 }
 
@@ -385,6 +434,22 @@ mod tests {
     async fn disk_alias_resolves_named_driver() {
         let storage = Storage::disk("local").unwrap();
         assert_eq!(storage.driver_name(), "local");
+    }
+
+    #[test]
+    fn storage_config_supports_typed_builders_and_getters() {
+        let config = StorageConfig::from_pairs([("region", "eu")])
+            .with_path("root", PathBuf::from("storage"))
+            .with_bool("visibility", true)
+            .with_u64("max_retries", 3)
+            .merge(StorageConfig::new().with("bucket", "assets"));
+
+        assert_eq!(config.get("region"), Some("eu"));
+        assert_eq!(config.path("root"), Some(PathBuf::from("storage")));
+        assert_eq!(config.bool("visibility"), Some(true));
+        assert_eq!(config.u64("max_retries"), Some(3));
+        assert!(config.contains("bucket"));
+        assert!(config.keys().any(|key| key == "bucket"));
     }
 
     #[tokio::test]
