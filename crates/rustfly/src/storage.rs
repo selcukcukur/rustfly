@@ -199,6 +199,56 @@ impl Storage {
         Ok(())
     }
 
+    pub fn extend_or_replace(
+        name: impl Into<String>,
+        factory: impl Fn(&StorageConfig) -> Result<Arc<dyn RustflyAdapter>> + Send + Sync + 'static,
+    ) -> Result<()> {
+        Self::extend_or_replace_with_config(name, StorageConfig::new(), factory)
+    }
+
+    pub fn extend_or_replace_with_config(
+        name: impl Into<String>,
+        config: StorageConfig,
+        factory: impl Fn(&StorageConfig) -> Result<Arc<dyn RustflyAdapter>> + Send + Sync + 'static,
+    ) -> Result<()> {
+        let name = normalize_driver_name(name.into())?;
+        let mut registry = registry()
+            .write()
+            .map_err(|_| RustflyError::RegistryPoisoned)?;
+
+        registry.drivers.insert(
+            name.clone(),
+            DriverDefinition {
+                factory: Arc::new(factory),
+                config,
+            },
+        );
+
+        if registry.default_driver.is_none() {
+            registry.default_driver = Some(name);
+        }
+
+        Ok(())
+    }
+
+    pub fn has_driver(name: impl AsRef<str>) -> Result<bool> {
+        let name = normalize_driver_name(name.as_ref().to_string())?;
+        let registry = registry()
+            .read()
+            .map_err(|_| RustflyError::RegistryPoisoned)?;
+
+        Ok(registry.drivers.contains_key(&name))
+    }
+
+    pub fn driver_names() -> Result<Vec<String>> {
+        let registry = registry()
+            .read()
+            .map_err(|_| RustflyError::RegistryPoisoned)?;
+        let mut names = registry.drivers.keys().cloned().collect::<Vec<_>>();
+        names.sort();
+        Ok(names)
+    }
+
     pub fn configure(name: impl Into<String>, config: StorageConfig) -> Result<()> {
         let name = normalize_driver_name(name.into())?;
         let mut registry = registry()
@@ -467,6 +517,26 @@ mod tests {
             storage.read_sync("anything").unwrap(),
             Bytes::from_static(b"memory-sync")
         );
+    }
+
+    #[tokio::test]
+    async fn drivers_can_be_inspected_and_replaced() {
+        let name = format!("replaceable-{}", std::process::id());
+
+        Storage::extend(&name, |_| Ok(Arc::new(MemoryAdapter::default()))).unwrap();
+        assert!(Storage::has_driver(&name).unwrap());
+        assert!(
+            Storage::driver_names()
+                .unwrap()
+                .iter()
+                .any(|driver| driver == &name)
+        );
+
+        Storage::extend_or_replace(&name, |_| Ok(Arc::new(MemoryAdapter::default()))).unwrap();
+
+        let storage = Storage::driver(&name).unwrap();
+        storage.write("file.txt", "data").await.unwrap();
+        assert!(storage.exists("file.txt").await.unwrap());
     }
 
     #[tokio::test]
