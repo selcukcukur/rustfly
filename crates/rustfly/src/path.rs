@@ -1,42 +1,107 @@
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
+
+use crate::definition::{Result, RustflyError};
 
 #[derive(Debug, Clone)]
 pub struct RustflyPath {
-  inner: PathBuf,
+    inner: PathBuf,
 }
 
 impl RustflyPath {
-  /// Create a safe path inside a given root directory.
-  pub fn new(root: &Path, input: &str) -> Result<Self, String> {
-    let joined = root.join(input);
-
-    let canonical = joined
-      .canonicalize()
-      .map_err(|_| "invalid path".to_string())?;
-
-    let root_canonical = root
-      .canonicalize()
-      .map_err(|_| "invalid root path".to_string())?;
-
-    if !canonical.starts_with(&root_canonical) {
-      return Err("path traversal detected".to_string());
+    pub fn new(root: &Path, input: &str) -> Result<Self> {
+        let relative = normalize_relative(input)?;
+        Ok(Self {
+            inner: root.join(relative),
+        })
     }
 
-    Ok(Self { inner: canonical })
-  }
+    pub fn new_allow_root(root: &Path, input: &str) -> Result<Self> {
+        let relative = normalize_relative_allow_root(input)?;
+        Ok(Self {
+            inner: root.join(relative),
+        })
+    }
 
-  /// Borrow as Path
-  pub fn as_path(&self) -> &Path {
-    &self.inner
-  }
+    pub fn normalize(input: &str) -> Result<PathBuf> {
+        normalize_relative(input)
+    }
 
-  /// Consume and return PathBuf
-  pub fn into_path_buf(self) -> PathBuf {
-    self.inner
-  }
+    pub fn normalize_allow_root(input: &str) -> Result<PathBuf> {
+        normalize_relative_allow_root(input)
+    }
 
-  /// String representation (lossy)
-  pub fn to_string(&self) -> String {
-    self.inner.to_string_lossy().to_string()
-  }
+    pub fn storage_key(input: &str) -> Result<String> {
+        let path = normalize_relative_allow_root(input)?;
+        let key = path
+            .components()
+            .map(|component| component.as_os_str().to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("/");
+
+        Ok(key)
+    }
+
+    pub fn as_path(&self) -> &Path {
+        &self.inner
+    }
+
+    pub fn into_path_buf(self) -> PathBuf {
+        self.inner
+    }
+}
+
+fn normalize_relative(input: &str) -> Result<PathBuf> {
+    let normalized = normalize_relative_allow_root(input)?;
+
+    if normalized.as_os_str().is_empty() {
+        return Err(RustflyError::InvalidPath(input.to_string()));
+    }
+
+    Ok(normalized)
+}
+
+fn normalize_relative_allow_root(input: &str) -> Result<PathBuf> {
+    let mut normalized = PathBuf::new();
+
+    for component in Path::new(input).components() {
+        match component {
+            Component::Normal(value) => normalized.push(value),
+            Component::CurDir => {}
+            Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
+                return Err(RustflyError::InvalidPath(input.to_string()));
+            }
+        }
+    }
+
+    Ok(normalized)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_traversal() {
+        assert!(RustflyPath::normalize("../secret.txt").is_err());
+    }
+
+    #[test]
+    fn normalizes_storage_keys_to_forward_slashes() {
+        assert_eq!(
+            RustflyPath::storage_key("folder/file.txt").unwrap(),
+            "folder/file.txt"
+        );
+    }
+
+    #[test]
+    fn allows_root_for_root_safe_operations() {
+        assert_eq!(RustflyPath::storage_key("").unwrap(), "");
+        assert!(RustflyPath::normalize("").is_err());
+        assert!(
+            RustflyPath::normalize_allow_root("")
+                .unwrap()
+                .as_os_str()
+                .is_empty()
+        );
+    }
 }
