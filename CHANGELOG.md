@@ -8,12 +8,14 @@
 - Add `Storage::size` and `Storage::last_modified` with sync variants.
 - Add UTF-8 `read_string` and `get_string` shortcuts with sync variants.
 - Add `append` and `prepend` content shortcuts with sync variants.
+- Add `missing` path-check shortcuts with sync variants.
 
 ### Testing
 
 - Cover file size and last-modified shortcuts against an isolated native driver.
 - Cover UTF-8 string reads against an isolated native driver.
 - Cover append and prepend flows against an isolated native driver.
+- Cover missing path checks against an isolated native driver.
 
 ## 0.1.0-alpha.6 - 2026-06-12
 

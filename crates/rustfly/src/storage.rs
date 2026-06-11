@@ -406,6 +406,14 @@ impl Storage {
         Self::default_driver()?.exists_sync(path)
     }
 
+    pub async fn missing(path: &str) -> Result<bool> {
+        Self::default_driver()?.missing(path).await
+    }
+
+    pub fn missing_sync(path: &str) -> Result<bool> {
+        Self::default_driver()?.missing_sync(path)
+    }
+
     pub async fn create_dir(path: &str) -> Result<()> {
         Self::default_driver()?.create_dir(path).await
     }
@@ -801,6 +809,26 @@ mod tests {
             .unwrap();
 
         assert_eq!(storage.get_string("log.txt").await.unwrap(), "hello world!");
+    }
+
+    #[tokio::test]
+    async fn driver_shortcuts_check_missing_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = format!("missing-{}", std::process::id());
+        Storage::extend_or_replace_with_config(
+            &name,
+            StorageConfig::new().with_path("root", dir.path()),
+            |config| {
+                let root = config.path("root").unwrap();
+                Ok(Arc::new(NativeAdapter::new(root)))
+            },
+        )
+        .unwrap();
+
+        let storage = Storage::disk(&name).unwrap();
+        assert!(storage.missing("missing.txt").await.unwrap());
+        storage.put("missing.txt", "present").await.unwrap();
+        assert!(!storage.missing_sync("missing.txt").unwrap());
     }
 
     #[cfg(feature = "inmemory")]

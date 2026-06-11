@@ -125,6 +125,14 @@ impl Filesystem {
         self.adapter.exists_sync(path)
     }
 
+    pub async fn missing(&self, path: &str) -> Result<bool> {
+        Ok(!self.exists(path).await?)
+    }
+
+    pub fn missing_sync(&self, path: &str) -> Result<bool> {
+        Ok(!self.exists_sync(path)?)
+    }
+
     pub async fn create_dir(&self, path: &str) -> Result<()> {
         self.adapter.create_dir(path).await
     }
