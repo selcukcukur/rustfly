@@ -1,12 +1,12 @@
 [package]
 name = "rustfly-inmemory"
-version = "0.1.0-alpha.5"
+version = "0.1.0-alpha.6"
 edition = "2024"
 
 [dependencies]
 async-trait = "0.1.89"
 bytes = "1.11.1"
-rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.5" }
+rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.6" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }

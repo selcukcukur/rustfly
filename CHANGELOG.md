@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.6 - 2026-06-12
+
+### Features
+
+- Add default recursive listing behavior to the adapter contract.
+- Add `list_recursive`, `all_files`, and `all_directories` to `Filesystem`.
+- Add `Storage::list_recursive`, `Storage::all_files`, and `Storage::all_directories` with sync variants.
+
+### Testing
+
+- Cover recursive file and directory listing against an isolated native driver.
+
 ## 0.1.0-alpha.5 - 2026-06-12
 
 ### Features
