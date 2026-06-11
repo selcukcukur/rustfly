@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "crates/rustfly"
+    "crates/rustfly",
+    "crates/rustfly-core"
 ]
 
 resolver = "3"
