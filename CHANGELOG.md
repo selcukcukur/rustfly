@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `Filesystem::size` and `Filesystem::last_modified` with sync variants.
+- Add `Storage::size` and `Storage::last_modified` with sync variants.
+
+### Testing
+
+- Cover file size and last-modified shortcuts against an isolated native driver.
+
 ## 0.1.0-alpha.6 - 2026-06-12
 
 ### Features
