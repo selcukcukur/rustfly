@@ -1,15 +1,15 @@
 [package]
 name = "rustfly"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2024"
 
 [features]
 default = ["native"]
 native = []
+inmemory = ["dep:rustfly-inmemory"]
 s3 = []
 drive = []
 ftp = []
-inmemory = []
 azure = []
 gridfs = []
 webdav = []
@@ -20,6 +20,8 @@ cloudflare = []
 [dependencies]
 async-trait = "0.1.89"
 bytes = "1.11.1"
+rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.2" }
+rustfly-inmemory = { path = "../rustfly-inmemory", version = "0.1.0-alpha.2", optional = true }
 tokio = { version = "1", features = ["fs", "rt", "macros"] }
 tempfile = "3.27.0"
 

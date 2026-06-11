@@ -1,6 +1,8 @@
 [workspace]
 members = [
-    "crates/rustfly"
+    "crates/rustfly",
+    "crates/rustfly-core",
+    "crates/rustfly-inmemory"
 ]
 
 resolver = "3"
