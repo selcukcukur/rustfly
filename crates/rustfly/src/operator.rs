@@ -2,7 +2,7 @@ use bytes::Bytes;
 use std::sync::Arc;
 
 use crate::adapter::contract::RustflyAdapter;
-use crate::definition::{Metadata, Result};
+use crate::definition::{EntryKind, Metadata, Result};
 
 #[derive(Clone)]
 pub struct Filesystem {
@@ -88,6 +88,22 @@ impl Filesystem {
         self.adapter.list_sync(path)
     }
 
+    pub async fn files(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list(path).await?, EntryKind::File)
+    }
+
+    pub fn files_sync(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list_sync(path)?, EntryKind::File)
+    }
+
+    pub async fn directories(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list(path).await?, EntryKind::Directory)
+    }
+
+    pub fn directories_sync(&self, path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(self.list_sync(path)?, EntryKind::Directory)
+    }
+
     pub async fn metadata(&self, path: &str) -> Result<Metadata> {
         self.adapter.metadata(path).await
     }
@@ -111,4 +127,11 @@ impl Filesystem {
     pub fn move_file_sync(&self, from: &str, to: &str) -> Result<()> {
         self.adapter.move_file_sync(from, to)
     }
+}
+
+fn filter_by_kind(entries: Vec<Metadata>, kind: EntryKind) -> Result<Vec<Metadata>> {
+    Ok(entries
+        .into_iter()
+        .filter(|entry| entry.kind() == kind)
+        .collect())
 }

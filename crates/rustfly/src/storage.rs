@@ -7,7 +7,7 @@ use bytes::Bytes;
 use crate::adapter::contract::RustflyAdapter;
 #[cfg(feature = "native")]
 use crate::adapter::native::NativeAdapter;
-use crate::definition::{Metadata, Result, RustflyError};
+use crate::definition::{EntryKind, Metadata, Result, RustflyError};
 use crate::operator::Filesystem;
 #[cfg(feature = "inmemory")]
 use rustfly_inmemory::InMemoryAdapter;
@@ -389,6 +389,22 @@ impl Storage {
         Self::default_driver()?.list_sync(path)
     }
 
+    pub async fn files(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list(path).await?, EntryKind::File)
+    }
+
+    pub fn files_sync(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list_sync(path)?, EntryKind::File)
+    }
+
+    pub async fn directories(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list(path).await?, EntryKind::Directory)
+    }
+
+    pub fn directories_sync(path: &str) -> Result<Vec<Metadata>> {
+        filter_by_kind(Self::list_sync(path)?, EntryKind::Directory)
+    }
+
     pub async fn metadata(path: &str) -> Result<Metadata> {
         Self::default_driver()?.metadata(path).await
     }
@@ -422,6 +438,13 @@ fn normalize_driver_name(name: String) -> Result<String> {
     }
 
     Ok(name)
+}
+
+fn filter_by_kind(entries: Vec<Metadata>, kind: EntryKind) -> Result<Vec<Metadata>> {
+    Ok(entries
+        .into_iter()
+        .filter(|entry| entry.kind() == kind)
+        .collect())
 }
 
 #[cfg(test)]
@@ -559,6 +582,35 @@ mod tests {
         assert_eq!(Storage::get_sync("facade/moved.txt").unwrap(), "sync");
         assert!(Storage::exists("facade/copy.txt").await.unwrap());
         assert_eq!(Storage::metadata_sync("facade/moved.txt").unwrap().len(), 4);
+    }
+
+    #[tokio::test]
+    async fn driver_shortcuts_filter_files_and_directories() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = format!("listing-{}", std::process::id());
+        Storage::extend_or_replace_with_config(
+            &name,
+            StorageConfig::new().with_path("root", dir.path()),
+            |config| {
+                let root = config.path("root").unwrap();
+                Ok(Arc::new(NativeAdapter::new(root)))
+            },
+        )
+        .unwrap();
+
+        let storage = Storage::disk(&name).unwrap();
+        storage.put("listing/file.txt", "file").await.unwrap();
+        storage.create_dir("listing/empty").await.unwrap();
+
+        let files = storage.files("listing").await.unwrap();
+        let directories = storage.directories_sync("listing").unwrap();
+
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].path(), "listing/file.txt");
+        assert!(files[0].is_file());
+        assert_eq!(directories.len(), 1);
+        assert_eq!(directories[0].path(), "listing/empty");
+        assert!(directories[0].is_directory());
     }
 
     #[cfg(feature = "inmemory")]

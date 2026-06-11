@@ -91,6 +91,14 @@ impl Metadata {
         self.kind
     }
 
+    pub fn is_file(&self) -> bool {
+        self.kind == EntryKind::File
+    }
+
+    pub fn is_directory(&self) -> bool {
+        self.kind == EntryKind::Directory
+    }
+
     pub fn len(&self) -> u64 {
         self.len
     }
