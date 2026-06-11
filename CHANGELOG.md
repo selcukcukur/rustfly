@@ -11,6 +11,9 @@
 - Add `missing` path-check shortcuts with sync variants.
 - Normalize storage paths with platform-independent `/` and `\` separators for native storage.
 - Add `UnsupportedAdapter` for feature-gated driver crate placeholders.
+- Add first-party placeholder crates for S3, Google Drive, FTP, Azure Blob Storage, GridFS, WebDAV, ZIP, SFTP, and Cloudflare R2.
+- Register feature-enabled placeholder drivers automatically in `Storage::driver`.
+- Re-export feature-enabled adapter crates from the `rustfly` facade crate.
 
 ### Testing
 
@@ -20,6 +23,7 @@
 - Cover missing path checks against an isolated native driver.
 - Cover Windows-style separators and absolute path rejection in portable storage paths.
 - Cover unsupported adapter sync and async error behavior.
+- Cover automatic placeholder driver registration under `--all-features`.
 
 ## 0.1.0-alpha.6 - 2026-06-12
 

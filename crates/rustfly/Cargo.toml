@@ -7,21 +7,30 @@ edition = "2024"
 default = ["native"]
 native = []
 inmemory = ["dep:rustfly-inmemory"]
-s3 = []
-drive = []
-ftp = []
-azure = []
-gridfs = []
-webdav = []
-zip = []
-sftp = []
-cloudflare = []
+s3 = ["dep:rustfly-s3"]
+drive = ["dep:rustfly-drive"]
+ftp = ["dep:rustfly-ftp"]
+azure = ["dep:rustfly-azure"]
+gridfs = ["dep:rustfly-gridfs"]
+webdav = ["dep:rustfly-webdav"]
+zip = ["dep:rustfly-zip"]
+sftp = ["dep:rustfly-sftp"]
+cloudflare = ["dep:rustfly-cloudflare"]
 
 [dependencies]
 async-trait = "0.1.89"
 bytes = "1.11.1"
 rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.6" }
 rustfly-inmemory = { path = "../rustfly-inmemory", version = "0.1.0-alpha.6", optional = true }
+rustfly-s3 = { path = "../rustfly-s3", version = "0.1.0-alpha.6", optional = true }
+rustfly-drive = { path = "../rustfly-drive", version = "0.1.0-alpha.6", optional = true }
+rustfly-ftp = { path = "../rustfly-ftp", version = "0.1.0-alpha.6", optional = true }
+rustfly-azure = { path = "../rustfly-azure", version = "0.1.0-alpha.6", optional = true }
+rustfly-gridfs = { path = "../rustfly-gridfs", version = "0.1.0-alpha.6", optional = true }
+rustfly-webdav = { path = "../rustfly-webdav", version = "0.1.0-alpha.6", optional = true }
+rustfly-zip = { path = "../rustfly-zip", version = "0.1.0-alpha.6", optional = true }
+rustfly-sftp = { path = "../rustfly-sftp", version = "0.1.0-alpha.6", optional = true }
+rustfly-cloudflare = { path = "../rustfly-cloudflare", version = "0.1.0-alpha.6", optional = true }
 tokio = { version = "1", features = ["fs", "rt", "macros"] }
 tempfile = "3.27.0"
 

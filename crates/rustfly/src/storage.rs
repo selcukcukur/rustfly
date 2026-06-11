@@ -159,6 +159,80 @@ fn init_builtin_drivers(lock: &'static RwLock<Registry>) {
             registry.default_driver = Some("memory".to_string());
         }
     }
+
+    #[cfg(any(
+        feature = "s3",
+        feature = "drive",
+        feature = "ftp",
+        feature = "azure",
+        feature = "gridfs",
+        feature = "webdav",
+        feature = "zip",
+        feature = "sftp",
+        feature = "cloudflare"
+    ))]
+    {
+        let mut registry = lock.write().expect("rustfly registry poisoned");
+
+        #[cfg(feature = "s3")]
+        register_unsupported_driver(&mut registry, rustfly_s3::DRIVER, rustfly_s3::adapter);
+        #[cfg(feature = "drive")]
+        register_unsupported_driver(&mut registry, rustfly_drive::DRIVER, rustfly_drive::adapter);
+        #[cfg(feature = "ftp")]
+        register_unsupported_driver(&mut registry, rustfly_ftp::DRIVER, rustfly_ftp::adapter);
+        #[cfg(feature = "azure")]
+        register_unsupported_driver(&mut registry, rustfly_azure::DRIVER, rustfly_azure::adapter);
+        #[cfg(feature = "gridfs")]
+        register_unsupported_driver(
+            &mut registry,
+            rustfly_gridfs::DRIVER,
+            rustfly_gridfs::adapter,
+        );
+        #[cfg(feature = "webdav")]
+        register_unsupported_driver(
+            &mut registry,
+            rustfly_webdav::DRIVER,
+            rustfly_webdav::adapter,
+        );
+        #[cfg(feature = "zip")]
+        register_unsupported_driver(&mut registry, rustfly_zip::DRIVER, rustfly_zip::adapter);
+        #[cfg(feature = "sftp")]
+        register_unsupported_driver(&mut registry, rustfly_sftp::DRIVER, rustfly_sftp::adapter);
+        #[cfg(feature = "cloudflare")]
+        register_unsupported_driver(
+            &mut registry,
+            rustfly_cloudflare::DRIVER,
+            rustfly_cloudflare::adapter,
+        );
+    }
+}
+
+#[cfg(any(
+    feature = "s3",
+    feature = "drive",
+    feature = "ftp",
+    feature = "azure",
+    feature = "gridfs",
+    feature = "webdav",
+    feature = "zip",
+    feature = "sftp",
+    feature = "cloudflare"
+))]
+fn register_unsupported_driver<A>(registry: &mut Registry, name: &'static str, adapter: fn() -> A)
+where
+    A: RustflyAdapter + 'static,
+{
+    if registry.drivers.contains_key(name) {
+        return;
+    }
+
+    registry.drivers.insert(
+        name.to_string(),
+        DriverDefinition {
+            factory: Arc::new(move |_| Ok(Arc::new(adapter()))),
+            config: StorageConfig::new(),
+        },
+    );
 }
 
 pub struct Storage;
@@ -839,5 +913,44 @@ mod tests {
         storage.write("feature.txt", "enabled").await.unwrap();
 
         assert_eq!(storage.read("feature.txt").await.unwrap(), "enabled");
+    }
+
+    #[cfg(all(
+        feature = "s3",
+        feature = "drive",
+        feature = "ftp",
+        feature = "azure",
+        feature = "gridfs",
+        feature = "webdav",
+        feature = "zip",
+        feature = "sftp",
+        feature = "cloudflare"
+    ))]
+    #[tokio::test]
+    async fn enabled_adapter_features_register_placeholder_drivers() {
+        let expected = [
+            "azure",
+            "cloudflare",
+            "drive",
+            "ftp",
+            "gridfs",
+            "s3",
+            "sftp",
+            "webdav",
+            "zip",
+        ];
+        let names = Storage::driver_names().unwrap();
+
+        for driver in expected {
+            assert!(names.iter().any(|name| name == driver), "{driver} missing");
+        }
+
+        let error = Storage::driver("s3")
+            .unwrap()
+            .read("object.txt")
+            .await
+            .unwrap_err();
+
+        assert!(matches!(error, RustflyError::Unsupported("read")));
     }
 }

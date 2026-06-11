@@ -1,0 +1,7 @@
+[package]
+name = "rustfly-webdav"
+version = "0.1.0-alpha.6"
+edition = "2024"
+
+[dependencies]
+rustfly-core = { path = "../rustfly-core", version = "0.1.0-alpha.6" }

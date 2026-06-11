@@ -205,10 +205,33 @@ version = "0.1.0-alpha.6"
 dependencies = [
  "async-trait",
  "bytes",
+ "rustfly-azure",
+ "rustfly-cloudflare",
  "rustfly-core",
+ "rustfly-drive",
+ "rustfly-ftp",
+ "rustfly-gridfs",
  "rustfly-inmemory",
+ "rustfly-s3",
+ "rustfly-sftp",
+ "rustfly-webdav",
+ "rustfly-zip",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "rustfly-azure"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
+name = "rustfly-cloudflare"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
 ]
 
 [[package]]
@@ -221,6 +244,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustfly-drive"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
+name = "rustfly-ftp"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
+name = "rustfly-gridfs"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
 name = "rustfly-inmemory"
 version = "0.1.0-alpha.6"
 dependencies = [
@@ -228,6 +272,34 @@ dependencies = [
  "bytes",
  "rustfly-core",
  "tokio",
+]
+
+[[package]]
+name = "rustfly-s3"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
+name = "rustfly-sftp"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
+name = "rustfly-webdav"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
+]
+
+[[package]]
+name = "rustfly-zip"
+version = "0.1.0-alpha.6"
+dependencies = [
+ "rustfly-core",
 ]
 
 [[package]]

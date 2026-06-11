@@ -2,7 +2,16 @@
 members = [
     "crates/rustfly",
     "crates/rustfly-core",
-    "crates/rustfly-inmemory"
+    "crates/rustfly-inmemory",
+    "crates/rustfly-s3",
+    "crates/rustfly-drive",
+    "crates/rustfly-ftp",
+    "crates/rustfly-azure",
+    "crates/rustfly-gridfs",
+    "crates/rustfly-webdav",
+    "crates/rustfly-zip",
+    "crates/rustfly-sftp",
+    "crates/rustfly-cloudflare"
 ]
 
 resolver = "3"
