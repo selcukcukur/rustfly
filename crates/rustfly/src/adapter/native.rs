@@ -300,6 +300,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_write_accepts_cross_platform_separators() {
+        let (adapter, _dir) = make_adapter();
+
+        adapter
+            .write("nested\\portable\\file.txt", Bytes::from("data"))
+            .await
+            .unwrap();
+
+        assert!(adapter.exists("nested/portable/file.txt").await.unwrap());
+    }
+
+    #[tokio::test]
     async fn test_exists_true() {
         let (adapter, _dir) = make_adapter();
 

@@ -1,4 +1,4 @@
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use crate::definition::{Result, RustflyError};
 
@@ -61,19 +61,34 @@ fn normalize_relative(input: &str) -> Result<PathBuf> {
 }
 
 fn normalize_relative_allow_root(input: &str) -> Result<PathBuf> {
+    if is_absolute_storage_path(input) {
+        return Err(RustflyError::InvalidPath(input.to_string()));
+    }
+
     let mut normalized = PathBuf::new();
 
-    for component in Path::new(input).components() {
+    for component in input.split(['/', '\\']) {
         match component {
-            Component::Normal(value) => normalized.push(value),
-            Component::CurDir => {}
-            Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
-                return Err(RustflyError::InvalidPath(input.to_string()));
-            }
+            "" | "." => {}
+            ".." => return Err(RustflyError::InvalidPath(input.to_string())),
+            value if is_portable_segment(value) => normalized.push(value),
+            _ => return Err(RustflyError::InvalidPath(input.to_string())),
         }
     }
 
     Ok(normalized)
+}
+
+fn is_absolute_storage_path(input: &str) -> bool {
+    input.starts_with('/')
+        || input.starts_with('\\')
+        || input.as_bytes().get(1).is_some_and(|byte| *byte == b':')
+}
+
+fn is_portable_segment(segment: &str) -> bool {
+    !segment
+        .chars()
+        .any(|character| matches!(character, '\0' | '<' | '>' | ':' | '"' | '|' | '?' | '*'))
 }
 
 #[cfg(test)]
@@ -91,6 +106,29 @@ mod tests {
             RustflyPath::storage_key("folder/file.txt").unwrap(),
             "folder/file.txt"
         );
+    }
+
+    #[test]
+    fn normalizes_windows_separators_to_storage_keys() {
+        assert_eq!(
+            RustflyPath::storage_key("folder\\nested\\file.txt").unwrap(),
+            "folder/nested/file.txt"
+        );
+    }
+
+    #[test]
+    fn rejects_platform_absolute_paths() {
+        assert!(RustflyPath::normalize("/etc/passwd").is_err());
+        assert!(RustflyPath::normalize("\\Windows\\system.ini").is_err());
+        assert!(RustflyPath::normalize("C:\\Windows\\system.ini").is_err());
+        assert!(RustflyPath::normalize("\\\\server\\share\\file.txt").is_err());
+    }
+
+    #[test]
+    fn rejects_non_portable_segments() {
+        assert!(RustflyPath::normalize("folder/file:name.txt").is_err());
+        assert!(RustflyPath::normalize("folder/*.txt").is_err());
+        assert!(RustflyPath::normalize("folder/file?.txt").is_err());
     }
 
     #[test]

@@ -9,6 +9,7 @@
 - Add UTF-8 `read_string` and `get_string` shortcuts with sync variants.
 - Add `append` and `prepend` content shortcuts with sync variants.
 - Add `missing` path-check shortcuts with sync variants.
+- Normalize storage paths with platform-independent `/` and `\` separators for native storage.
 
 ### Testing
 
@@ -16,6 +17,7 @@
 - Cover UTF-8 string reads against an isolated native driver.
 - Cover append and prepend flows against an isolated native driver.
 - Cover missing path checks against an isolated native driver.
+- Cover Windows-style separators and absolute path rejection in portable storage paths.
 
 ## 0.1.0-alpha.6 - 2026-06-12
 
