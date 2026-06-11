@@ -1,2 +1,2 @@
-pub mod adapter;
+pub mod contract;
 pub mod native;

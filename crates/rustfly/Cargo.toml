@@ -1,7 +1,21 @@
 [package]
 name = "rustfly"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 edition = "2024"
+
+[features]
+default = ["native"]
+native = []
+s3 = []
+drive = []
+ftp = []
+inmemory = []
+azure = []
+gridfs = []
+webdav = []
+zip = []
+sftp = []
+cloudflare = []
 
 [dependencies]
 async-trait = "0.1.89"
