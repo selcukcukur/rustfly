@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.5 - 2026-06-12
+
+### Features
+
+- Add `Metadata::is_file` and `Metadata::is_directory` helpers.
+- Add `Filesystem::files` and `Filesystem::directories` with sync variants.
+- Add `Storage::files` and `Storage::directories` with sync variants.
+
+### Testing
+
+- Cover file and directory listing filters against an isolated native driver.
+
 ## 0.1.0-alpha.4 - 2026-06-12
 
 ### Features
