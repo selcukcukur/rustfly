@@ -4,6 +4,56 @@ use std::collections::VecDeque;
 
 use crate::definition::{Metadata, Result, RustflyError};
 
+/// Runtime capability metadata exposed by a storage adapter.
+///
+/// Capabilities are descriptive: callers can inspect them to adjust UI,
+/// validation, or fallback behavior, while operations still remain the source
+/// of truth and return errors when unsupported.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct AdapterCapabilities {
+    pub read: bool,
+    pub write: bool,
+    pub delete: bool,
+    pub list: bool,
+    pub metadata: bool,
+    pub copy: bool,
+    pub move_file: bool,
+    pub sync: bool,
+    pub async_operations: bool,
+}
+
+impl AdapterCapabilities {
+    /// Capabilities for an adapter that does not support storage operations yet.
+    pub const fn none() -> Self {
+        Self {
+            read: false,
+            write: false,
+            delete: false,
+            list: false,
+            metadata: false,
+            copy: false,
+            move_file: false,
+            sync: false,
+            async_operations: false,
+        }
+    }
+
+    /// Capabilities for a full read/write adapter with sync and async APIs.
+    pub const fn read_write() -> Self {
+        Self {
+            read: true,
+            write: true,
+            delete: true,
+            list: true,
+            metadata: true,
+            copy: true,
+            move_file: true,
+            sync: true,
+            async_operations: true,
+        }
+    }
+}
+
 /// Thread-safe filesystem adapter contract implemented by local, memory,
 /// remote, cloud, archive, and database-backed Rustfly drivers.
 ///
@@ -13,6 +63,11 @@ use crate::definition::{Metadata, Result, RustflyError};
 /// explicit unsupported operations.
 #[async_trait]
 pub trait RustflyAdapter: Send + Sync {
+    /// Return descriptive capability metadata for this adapter.
+    fn capabilities(&self) -> AdapterCapabilities {
+        AdapterCapabilities::none()
+    }
+
     /// Read the entire file contents using a blocking call.
     fn read_sync(&self, path: &str) -> Result<Bytes> {
         let _ = path;

@@ -5,7 +5,7 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 use tokio::fs;
 
-use crate::adapter::contract::RustflyAdapter;
+use crate::adapter::contract::{AdapterCapabilities, RustflyAdapter};
 use crate::definition::{EntryKind, Metadata, Result, RustflyError};
 use crate::path::RustflyPath;
 
@@ -67,6 +67,10 @@ impl NativeAdapter {
 
 #[async_trait]
 impl RustflyAdapter for NativeAdapter {
+    fn capabilities(&self) -> AdapterCapabilities {
+        AdapterCapabilities::read_write()
+    }
+
     fn read_sync(&self, path: &str) -> Result<Bytes> {
         let full_path = self.full_path(path)?;
         let data = sync_fs::read(full_path)?;

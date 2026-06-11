@@ -3,7 +3,9 @@ use std::sync::RwLock;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use rustfly_core::{EntryKind, Metadata, Result, RustflyAdapter, RustflyError, RustflyPath};
+use rustfly_core::{
+    AdapterCapabilities, EntryKind, Metadata, Result, RustflyAdapter, RustflyError, RustflyPath,
+};
 
 #[derive(Debug, Default)]
 /// In-memory adapter for tests, ephemeral storage, and local development.
@@ -79,6 +81,10 @@ impl InMemoryAdapter {
 
 #[async_trait]
 impl RustflyAdapter for InMemoryAdapter {
+    fn capabilities(&self) -> AdapterCapabilities {
+        AdapterCapabilities::read_write()
+    }
+
     fn read_sync(&self, path: &str) -> Result<Bytes> {
         let key = Self::key_required(path)?;
         let files = self.files.read().map_err(|_| RustflyError::LockPoisoned)?;
@@ -278,5 +284,12 @@ mod tests {
         assert!(root.iter().any(|entry| entry.path() == "a.txt"));
         assert!(root.iter().any(|entry| entry.path() == "docs"));
         assert!(docs.iter().any(|entry| entry.path() == "docs/readme.md"));
+    }
+
+    #[test]
+    fn reports_read_write_capabilities() {
+        let capabilities = InMemoryAdapter::new().capabilities();
+
+        assert_eq!(capabilities, AdapterCapabilities::read_write());
     }
 }

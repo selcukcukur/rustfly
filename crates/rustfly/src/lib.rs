@@ -11,7 +11,7 @@ pub mod path;
 pub mod storage;
 pub mod utility;
 
-pub use adapter::contract::RustflyAdapter;
+pub use adapter::contract::{AdapterCapabilities, RustflyAdapter};
 pub use adapter::native::NativeAdapter;
 pub use definition::{EntryKind, Metadata, Result, RustflyError};
 pub use operator::{Filesystem, RustflyOperator};

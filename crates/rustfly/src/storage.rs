@@ -700,6 +700,22 @@ mod tests {
     }
 
     #[test]
+    fn native_driver_reports_read_write_capabilities() {
+        let storage = Storage::disk("local").unwrap();
+        let capabilities = storage.capabilities();
+
+        assert!(capabilities.read);
+        assert!(capabilities.write);
+        assert!(capabilities.delete);
+        assert!(capabilities.list);
+        assert!(capabilities.metadata);
+        assert!(capabilities.copy);
+        assert!(capabilities.move_file);
+        assert!(capabilities.sync);
+        assert!(capabilities.async_operations);
+    }
+
+    #[test]
     fn storage_config_supports_typed_builders_and_getters() {
         let config = StorageConfig::from_pairs([("region", "eu")])
             .with_path("root", PathBuf::from("storage"))
@@ -987,5 +1003,8 @@ mod tests {
             .unwrap_err();
 
         assert!(matches!(error, RustflyError::Unsupported("read")));
+
+        let capabilities = Storage::driver("s3").unwrap().capabilities();
+        assert_eq!(capabilities, crate::AdapterCapabilities::none());
     }
 }

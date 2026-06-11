@@ -1,1 +1,1 @@
-pub use rustfly_core::RustflyAdapter;
+pub use rustfly_core::{AdapterCapabilities, RustflyAdapter};

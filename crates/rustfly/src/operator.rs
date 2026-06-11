@@ -2,7 +2,7 @@ use bytes::Bytes;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use crate::adapter::contract::RustflyAdapter;
+use crate::adapter::contract::{AdapterCapabilities, RustflyAdapter};
 use crate::definition::{EntryKind, Metadata, Result};
 
 #[derive(Clone)]
@@ -23,6 +23,10 @@ impl Filesystem {
 
     pub fn driver_name(&self) -> &str {
         &self.driver_name
+    }
+
+    pub fn capabilities(&self) -> AdapterCapabilities {
+        self.adapter.capabilities()
     }
 
     pub async fn read(&self, path: &str) -> Result<Bytes> {
