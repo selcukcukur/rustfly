@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.0-alpha.3 - 2026-06-12
+
+### Features
+
+- Add Laravel-style default storage shortcuts such as `Storage::get`, `Storage::put`, `Storage::exists`, `Storage::list`, `Storage::metadata`, `Storage::copy`, and `Storage::move_file`.
+- Add sync counterparts for default storage shortcuts, including `Storage::get_sync` and `Storage::put_sync`.
+
+### Changed
+
+- Continue alpha semver releases with `0.1.0-alpha.3`.
+
 ## 0.1.0-alpha.2 - 2026-06-11
 
 ### Features
