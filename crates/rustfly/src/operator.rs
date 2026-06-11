@@ -73,6 +73,42 @@ impl Filesystem {
         self.write_sync(path, contents)
     }
 
+    pub async fn append(&self, path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
+        let mut existing = if self.exists(path).await? {
+            self.read(path).await?.to_vec()
+        } else {
+            Vec::new()
+        };
+        existing.extend_from_slice(&contents.into());
+        self.write(path, Bytes::from(existing)).await
+    }
+
+    pub fn append_sync(&self, path: &str, contents: impl Into<Bytes>) -> Result<()> {
+        let mut existing = if self.exists_sync(path)? {
+            self.read_sync(path)?.to_vec()
+        } else {
+            Vec::new()
+        };
+        existing.extend_from_slice(&contents.into());
+        self.write_sync(path, Bytes::from(existing))
+    }
+
+    pub async fn prepend(&self, path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
+        let mut next = contents.into().to_vec();
+        if self.exists(path).await? {
+            next.extend_from_slice(&self.read(path).await?);
+        }
+        self.write(path, Bytes::from(next)).await
+    }
+
+    pub fn prepend_sync(&self, path: &str, contents: impl Into<Bytes>) -> Result<()> {
+        let mut next = contents.into().to_vec();
+        if self.exists_sync(path)? {
+            next.extend_from_slice(&self.read_sync(path)?);
+        }
+        self.write_sync(path, Bytes::from(next))
+    }
+
     pub async fn delete(&self, path: &str) -> Result<()> {
         self.adapter.delete(path).await
     }

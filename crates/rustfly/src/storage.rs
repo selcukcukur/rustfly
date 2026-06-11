@@ -374,6 +374,22 @@ impl Storage {
         Self::write_sync(path, contents)
     }
 
+    pub async fn append(path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
+        Self::default_driver()?.append(path, contents).await
+    }
+
+    pub fn append_sync(path: &str, contents: impl Into<Bytes>) -> Result<()> {
+        Self::default_driver()?.append_sync(path, contents)
+    }
+
+    pub async fn prepend(path: &str, contents: impl Into<Bytes> + Send) -> Result<()> {
+        Self::default_driver()?.prepend(path, contents).await
+    }
+
+    pub fn prepend_sync(path: &str, contents: impl Into<Bytes>) -> Result<()> {
+        Self::default_driver()?.prepend_sync(path, contents)
+    }
+
     pub async fn delete(path: &str) -> Result<()> {
         Self::default_driver()?.delete(path).await
     }
@@ -759,6 +775,32 @@ mod tests {
 
         assert_eq!(storage.get_string("text/file.txt").await.unwrap(), "hello");
         assert_eq!(storage.get_string_sync("text/file.txt").unwrap(), "hello");
+    }
+
+    #[tokio::test]
+    async fn driver_shortcuts_append_and_prepend_contents() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = format!("append-{}", std::process::id());
+        Storage::extend_or_replace_with_config(
+            &name,
+            StorageConfig::new().with_path("root", dir.path()),
+            |config| {
+                let root = config.path("root").unwrap();
+                Ok(Arc::new(NativeAdapter::new(root)))
+            },
+        )
+        .unwrap();
+
+        let storage = Storage::disk(&name).unwrap();
+        storage.append("log.txt", "world").await.unwrap();
+        storage
+            .prepend_sync("log.txt", Bytes::from_static(b"hello "))
+            .unwrap();
+        storage
+            .append_sync("log.txt", Bytes::from_static(b"!"))
+            .unwrap();
+
+        assert_eq!(storage.get_string("log.txt").await.unwrap(), "hello world!");
     }
 
     #[cfg(feature = "inmemory")]
