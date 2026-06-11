@@ -10,6 +10,7 @@
 - Add `append` and `prepend` content shortcuts with sync variants.
 - Add `missing` path-check shortcuts with sync variants.
 - Normalize storage paths with platform-independent `/` and `\` separators for native storage.
+- Add `UnsupportedAdapter` for feature-gated driver crate placeholders.
 
 ### Testing
 
@@ -18,6 +19,7 @@
 - Cover append and prepend flows against an isolated native driver.
 - Cover missing path checks against an isolated native driver.
 - Cover Windows-style separators and absolute path rejection in portable storage paths.
+- Cover unsupported adapter sync and async error behavior.
 
 ## 0.1.0-alpha.6 - 2026-06-12
 
