@@ -151,12 +151,12 @@ impl RustflyAdapter for NativeAdapter {
 
     fn list_sync(&self, path: &str) -> Result<Vec<Metadata>> {
         let full_path = self.full_path_allow_root(path)?;
+        let parent = RustflyPath::storage_key(path)?;
         let mut entries = Vec::new();
 
         for entry in sync_fs::read_dir(full_path)? {
             let entry = entry?;
             let file_name = entry.file_name().to_string_lossy().to_string();
-            let parent = RustflyPath::storage_key(path)?;
             let storage_path = join_storage_key(&parent, &file_name);
             entries.push(self.metadata_for_sync(&storage_path, entry.path())?);
         }
@@ -166,12 +166,12 @@ impl RustflyAdapter for NativeAdapter {
 
     async fn list(&self, path: &str) -> Result<Vec<Metadata>> {
         let full_path = self.full_path_allow_root(path)?;
+        let parent = RustflyPath::storage_key(path)?;
         let mut reader = fs::read_dir(full_path).await?;
         let mut entries = Vec::new();
 
         while let Some(entry) = reader.next_entry().await? {
             let file_name = entry.file_name().to_string_lossy().to_string();
-            let parent = RustflyPath::storage_key(path)?;
             let storage_path = join_storage_key(&parent, &file_name);
             entries.push(self.metadata_for(&storage_path, entry.path()).await?);
         }

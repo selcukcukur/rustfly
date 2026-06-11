@@ -55,16 +55,19 @@ impl InMemoryAdapter {
         if parent.is_empty() {
             !child.is_empty() && !child.contains('/')
         } else {
-            child
-                .strip_prefix(&format!("{parent}/"))
-                .is_some_and(|rest| !rest.is_empty() && !rest.contains('/'))
+            Self::strip_parent(parent, child).is_some_and(|rest| !rest.contains('/'))
         }
     }
 
     fn is_descendant(parent: &str, child: &str) -> bool {
+        Self::strip_parent(parent, child).is_some()
+    }
+
+    fn strip_parent<'a>(parent: &str, child: &'a str) -> Option<&'a str> {
         child
-            .strip_prefix(&format!("{parent}/"))
-            .is_some_and(|rest| !rest.is_empty())
+            .strip_prefix(parent)?
+            .strip_prefix('/')
+            .filter(|rest| !rest.is_empty())
     }
 }
 

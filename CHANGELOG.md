@@ -16,6 +16,11 @@
 - Re-export feature-enabled adapter crates from the `rustfly` facade crate.
 - Add Criterion benchmark coverage for native and in-memory storage read/write and list flows.
 
+### Performance
+
+- Reduce in-memory listing and deletion path matching allocations.
+- Avoid repeated native storage parent key normalization while listing directory entries.
+
 ### Testing
 
 - Cover file size and last-modified shortcuts against an isolated native driver.
