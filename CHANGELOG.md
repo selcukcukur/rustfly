@@ -14,6 +14,7 @@
 - Add first-party placeholder crates for S3, Google Drive, FTP, Azure Blob Storage, GridFS, WebDAV, ZIP, SFTP, and Cloudflare R2.
 - Register feature-enabled placeholder drivers automatically in `Storage::driver`.
 - Re-export feature-enabled adapter crates from the `rustfly` facade crate.
+- Add Criterion benchmark coverage for native and in-memory storage read/write and list flows.
 
 ### Testing
 
@@ -24,6 +25,7 @@
 - Cover Windows-style separators and absolute path rejection in portable storage paths.
 - Cover unsupported adapter sync and async error behavior.
 - Cover automatic placeholder driver registration under `--all-features`.
+- Verify benchmark targets compile under feature-enabled builds.
 
 ## 0.1.0-alpha.6 - 2026-06-12
 
